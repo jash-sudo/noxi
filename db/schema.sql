@@ -21,13 +21,13 @@ CREATE TABLE IF NOT EXISTS profiles (
   bio TEXT NOT NULL DEFAULT '',
   avatar_url TEXT NOT NULL DEFAULT '',
   background_url TEXT NOT NULL DEFAULT '',
-  background_type TEXT NOT NULL DEFAULT 'image',
+  background_type TEXT NOT NULL DEFAULT 'image' CHECK (background_type IN ('image','video','solid')),
   accent TEXT NOT NULL DEFAULT '#ffffff',
   text_color TEXT NOT NULL DEFAULT '#ffffff',
-  font_name TEXT NOT NULL DEFAULT 'system',
+  font_name TEXT NOT NULL DEFAULT 'system' CHECK (font_name IN ('system','mono','serif')),
   card_opacity INTEGER NOT NULL DEFAULT 90 CHECK (card_opacity BETWEEN 0 AND 100),
   blur_amount INTEGER NOT NULL DEFAULT 0 CHECK (blur_amount BETWEEN 0 AND 40),
-  entrance_animation TEXT NOT NULL DEFAULT 'none',
+  entrance_animation TEXT NOT NULL DEFAULT 'none' CHECK (entrance_animation IN ('none','fade','rise')),
   audio_url TEXT NOT NULL DEFAULT '',
   views BIGINT NOT NULL DEFAULT 0,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -50,6 +50,14 @@ CREATE TABLE IF NOT EXISTS social_links (
   platform TEXT NOT NULL,
   url TEXT NOT NULL,
   position INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS socials_user_position ON social_links(user_id, position);
+
+CREATE TABLE IF NOT EXISTS daily_profile_views (
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  viewed_on DATE NOT NULL,
+  views BIGINT NOT NULL DEFAULT 0,
+  PRIMARY KEY(user_id, viewed_on)
 );
 
 CREATE TABLE IF NOT EXISTS reports (
@@ -84,6 +92,7 @@ CREATE TABLE IF NOT EXISTS premium_grants (
   provider_reference TEXT NOT NULL DEFAULT '',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+CREATE UNIQUE INDEX IF NOT EXISTS premium_provider_reference_unique ON premium_grants(provider_reference) WHERE provider_reference <> '';
 
 CREATE TABLE IF NOT EXISTS rewarded_ad_progress (
   user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
@@ -100,11 +109,20 @@ CREATE TABLE IF NOT EXISTS password_reset_tokens (
   used_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+CREATE INDEX IF NOT EXISTS reset_expiry ON password_reset_tokens(expires_at);
 
 CREATE TABLE IF NOT EXISTS discord_links (
   user_id BIGINT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
   discord_user_id TEXT NOT NULL UNIQUE,
   linked_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS uploads (
+  id BIGSERIAL PRIMARY KEY,
+  user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  public_url TEXT NOT NULL,
+  mime_type TEXT NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE IF NOT EXISTS site_settings (
