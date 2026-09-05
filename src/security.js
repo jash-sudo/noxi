@@ -55,7 +55,7 @@ function csrfField(req) {
 
 function verifyCsrf(req, res, next) {
   if (['GET','HEAD','OPTIONS'].includes(req.method)) return next();
-  if (req.path.startsWith('/api/internal/') || req.path === '/api/rewards/provider-callback') return next();
+  if (req.path.startsWith('/api/internal/') || req.path === '/api/rewards/provider-callback' || req.path === '/upload') return next();
   const supplied = req.body?._csrf || req.get('x-csrf-token');
   if (!supplied || !req.session.csrf || !timingSafeEqual(supplied, req.session.csrf)) {
     return res.status(403).send('invalid csrf token');
