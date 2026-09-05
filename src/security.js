@@ -53,9 +53,24 @@ function csrfField(req) {
   return `<input type="hidden" name="_csrf" value="${esc(newCsrf(req))}">`;
 }
 
+function sameOrigin(req) {
+  const fetchSite = String(req.get('sec-fetch-site') || '').toLowerCase();
+  if (fetchSite && !['same-origin','none'].includes(fetchSite)) return false;
+  const origin = req.get('origin');
+  if (!origin) return true;
+  try {
+    const allowed = new URL(process.env.BASE_URL || `http://${req.get('host')}`);
+    const supplied = new URL(origin);
+    return allowed.protocol === supplied.protocol && allowed.host === supplied.host;
+  } catch {
+    return false;
+  }
+}
+
 function verifyCsrf(req, res, next) {
   if (['GET','HEAD','OPTIONS'].includes(req.method)) return next();
-  if (req.path.startsWith('/api/internal/') || req.path === '/api/rewards/provider-callback' || req.path === '/upload') return next();
+  if (req.path.startsWith('/api/internal/') || req.path === '/api/rewards/provider-callback') return next();
+  if (req.path === '/upload') return sameOrigin(req) ? next() : res.status(403).send('invalid request origin');
   const supplied = req.body?._csrf || req.get('x-csrf-token');
   if (!supplied || !req.session.csrf || !timingSafeEqual(supplied, req.session.csrf)) {
     return res.status(403).send('invalid csrf token');
