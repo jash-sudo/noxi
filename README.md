@@ -1,82 +1,105 @@
 # NOXI
 
-Minimal profile pages for `noxi.lol`.
+Minimal profile platform for `noxi.lol`.
 
-## Current status
+NOXI intentionally keeps the public homepage quiet: black, white, a username field, login, and Premium. The application behind it includes the account, profile, moderation, analytics, Premium, storage, and deployment infrastructure.
 
-NOXI is a working MVP, not the final full platform yet.
+## Included
 
-Working now:
-
-- minimal NOXI homepage
-- registration + login
-- unique usernames
-- public profiles at `/:username`
-- profile editor
-- links, bio, avatar/background URLs, accent color
-- profile view counter
-- reports
-- owner/admin panel
-- ban/unban
-- temporary Premium grants
+- registration, login, logout, secure sessions
+- case-insensitive unique usernames
+- reserved system usernames
+- owner setup protection for `jash`
+- password hashing with bcrypt
+- password reset token flow + optional Resend delivery
+- public `noxi.lol/{username}` profiles
+- display name, bio, avatar and background
+- links and social links
+- accent/text colors and font selection
+- Premium video backgrounds, profile audio, opacity, blur, entrance effects
+- browser-safe audio controls (no autoplay bypass)
+- Supabase Storage upload adapter
+- profile view counts + 30-day daily analytics
+- reporting system
+- moderator/admin/owner roles
+- ban, unban, suspend, Premium grants, report review
 - audit logs
-- Premium and donate placeholders
+- owner site settings
+- registration/maintenance switches
+- temporary Premium grants
+- server-verified rewarded-ad webhook framework with replay protection
+- external donation URL support (NOXI never handles raw card data)
+- Discord moderation bot + private internal API
+- Postgres production database
+- Postgres-backed sessions
+- CSRF protection and same-origin upload checks
+- Helmet/CSP, rate limiting, secure cookies, output escaping, URL validation
+- privacy and terms pages
+- `/health` endpoint
+- free Render deployment blueprint
+- automatic GitHub code checks
 
-Still needs production work before real users:
+## Keep secrets out of the big 'hub
 
-- persistent hosted Postgres/Supabase database
-- persistent production session store
-- CSRF protection
-- stricter CSP/security hardening
-- controlled file uploads/storage
-- password reset/email verification
-- Discord bot integration
-- rewarded-ad provider integration
-- donation/payment provider integration
-- final `noxi.lol` deployment/DNS
+Real secrets never belong in this repository. `.gitignore` blocks `.env` and local secret files. `.env.example` contains names/placeholders only.
 
-## Run locally
+Generate secrets with:
+
+```powershell
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+```
+
+Use a different generated value for every secret.
+
+## Fast local setup
 
 ```powershell
 git clone https://github.com/jash-sudo/noxi.git
 cd noxi
 npm install
 Copy-Item .env.example .env
+```
+
+Create a free hosted Postgres database, put its private connection URL in `.env` as `DATABASE_URL`, then:
+
+```powershell
+npm run db:init
+npm run check
 npm start
 ```
 
 Open `http://localhost:3000`.
 
-## Secrets
+## Production/free setup
 
-Never commit `.env`.
-
-The repository's `.gitignore` blocks `.env`, `.env.*`, local databases, logs, and other local files. Only `.env.example` is meant to be committed.
-
-Generate strong values with:
-
-```powershell
-node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
-```
-
-Use different random values for `SESSION_SECRET` and `OWNER_SETUP_TOKEN`.
-
-See **[SECURITY.md](SECURITY.md)** for the security checklist.
+Follow **[docs/FULL_SETUP.md](docs/FULL_SETUP.md)** from top to bottom. It covers the database, secret values, Render, `noxi.lol`, uploads, password-reset email, Discord, rewarded ads, donations, and final verification.
 
 ## Owner account
 
-The intended owner username is `jash`, but the username alone does not grant owner access.
+The intended owner username is `jash`, but the username itself never grants owner access. Registration as `jash` requires the private `OWNER_SETUP_TOKEN` from the server environment. After the owner account exists, rotate that token to a new random value.
 
-Before registering `jash`, set a strong `OWNER_SETUP_TOKEN` in your local/hosting environment. Supply that token during owner registration.
+## Provider integrations
 
-After the owner account is created, remove or rotate the production owner setup token so it cannot be reused.
+The code for uploads, reset email, Discord, rewarded-ad callbacks, and external donations is already in the repository. Features that depend on a third-party account remain off until that provider's legitimate credentials are entered in the hosting provider's private Environment settings.
 
-## Free deployment
+Do not put provider tokens into frontend JavaScript, GitHub, screenshots, issues, or chat messages.
 
-Do not deploy the current SQLite database as important user storage on a free ephemeral web host. Data can disappear after restarts or redeploys.
+## Important files
 
-Use **[docs/FREE_SETUP.md](docs/FREE_SETUP.md)** for the safe free setup path and the exact secret-handling steps.
+```text
+server.js                 entrypoint
+src/app.js                web application/routes
+src/db.js                 Postgres layer
+src/security.js           validation/CSRF/security helpers
+src/views.js              minimal server-rendered UI
+src/integrations.js       email/storage/reward adapters
+public/style.css          NOXI visual design
+public/app.js             tiny browser-side behavior
+db/schema.sql             complete Postgres schema
+discord/bot.js            Discord moderation bot
+render.yaml               free deployment blueprint
+docs/FULL_SETUP.md        exact setup instructions
+SECURITY.md                secret/security checklist
+```
 
-## Security rule
-
-Real secrets belong only in your local `.env` or your hosting provider's secret/environment settings. Never place database passwords, Discord bot tokens, payment keys, service-role keys, or session secrets in GitHub or frontend code.
+Keep the repository private until deployment is verified and you have confirmed no real secret has ever been committed.
