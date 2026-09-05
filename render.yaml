@@ -3,7 +3,7 @@ services:
     name: noxi-web
     runtime: node
     plan: free
-    buildCommand: npm ci && npm run check
+    buildCommand: npm install && npm run check
     startCommand: npm start
     healthCheckPath: /health
     autoDeploy: true
