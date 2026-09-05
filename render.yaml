@@ -1,0 +1,28 @@
+services:
+  - type: web
+    name: noxi-web
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: BASE_URL
+        value: https://noxi.lol
+      - key: SESSION_SECRET
+        sync: false
+      - key: OWNER_USERNAME
+        value: jash
+      - key: OWNER_SETUP_TOKEN
+        sync: false
+      - key: NOXI_INTERNAL_API_SECRET
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: REWARDED_ADS_ENABLED
+        value: "false"
+      - key: DONATIONS_ENABLED
+        value: "false"
