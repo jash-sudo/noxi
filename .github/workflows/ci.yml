@@ -1,0 +1,30 @@
+name: NOXI checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: package-lock.json
+      - run: npm install
+      - run: node --check server.js
+      - run: node --check src/app.js
+      - run: node --check src/db.js
+      - run: node --check src/security.js
+      - run: node --check src/views.js
+      - run: node --check src/integrations.js
+      - run: node --check discord/bot.js
+      - run: node --check scripts/check-env.js
+      - run: node --check scripts/init-db.js
