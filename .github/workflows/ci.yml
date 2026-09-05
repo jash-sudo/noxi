@@ -23,6 +23,7 @@ jobs:
       - run: node --check src/security.js
       - run: node --check src/views.js
       - run: node --check src/integrations.js
+      - run: node --check src/internal-extra.js
       - run: node --check discord/bot.js
       - run: node --check scripts/check-env.js
       - run: node --check scripts/init-db.js
