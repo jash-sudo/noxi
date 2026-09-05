@@ -2,66 +2,90 @@
 
 ## Secrets
 
-Never commit real secrets to GitHub. The repository intentionally ignores `.env` and `.env.*` files while keeping only `.env.example` as a template.
+Never commit real secrets to GitHub. `.gitignore` blocks `.env` and `.env.*` while allowing only `.env.example`.
 
-Real values belong only in one of these places:
+Real values belong only in:
 
-- your local `.env` file on your own computer
-- the hosting provider's Environment / Secrets settings
-- a dedicated secret manager
+- your local `.env` file
+- the hosting provider's private Environment/Secrets settings
+- a legitimate secret manager
 
-Never place secrets in `public/`, client-side JavaScript, HTML, screenshots, issues, commits, README files, or Discord messages.
+Never place secrets in `public/`, browser JavaScript, HTML, screenshots, issues, commits, README files, or Discord messages.
 
-Treat these as secrets:
+Treat all of these as private:
 
 - `SESSION_SECRET`
 - `OWNER_SETUP_TOKEN`
-- database passwords / connection strings
-- Discord bot tokens
-- payment provider keys
-- ad provider server keys
-- storage service keys
+- `NOXI_INTERNAL_API_SECRET`
+- `DATABASE_URL`
+- `DISCORD_BOT_TOKEN`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `RESEND_API_KEY`
+- `REWARDED_AD_WEBHOOK_SECRET`
+- any future provider secret
 
-If a secret is ever committed, deleting the file is not enough. Rotate/revoke that secret immediately because Git history may still contain it.
+If a secret is committed, deleting the visible line is not enough. Revoke/rotate it immediately because Git history may retain it.
 
-## Generating strong values
-
-PowerShell:
+## Generate strong values
 
 ```powershell
--join ((48..57)+(65..90)+(97..122) | Get-Random -Count 64 | ForEach-Object {[char]$_})
-```
-
-Node.js:
-
-```bash
 node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 ```
 
-Use different random values for `SESSION_SECRET` and `OWNER_SETUP_TOKEN`.
+Generate a different value for every secret.
 
 ## Owner account
 
-The owner role is checked server-side. The username alone does not grant owner access. Before registering `jash`, set a strong `OWNER_SETUP_TOKEN`. Do not share that token.
+The owner role is stored and checked server-side. The username `jash` alone does not grant owner access. Initial registration requires the private `OWNER_SETUP_TOKEN`.
 
-After the owner account exists, you should remove the owner setup token from the hosting environment or replace it with a fresh random value so it cannot be reused.
+After the owner exists, rotate the setup token. Do not replace the owner logic with a client-side username check.
+
+## Current protections
+
+NOXI includes:
+
+- bcrypt password hashing
+- Postgres-backed sessions
+- HTTP-only/SameSite cookies and Secure cookies in production
+- CSRF tokens for normal state-changing forms
+- same-origin checks for multipart uploads
+- Helmet security headers and CSP
+- request rate limiting
+- server-side role/permission checks
+- URL protocol validation
+- HTML escaping
+- upload MIME/size allowlists
+- hashed, expiring, one-use password reset tokens
+- moderation audit logs
+- HMAC verification for rewarded-ad callbacks
+- provider-reference replay protection
+- internal Discord API secret authentication
 
 ## Production checklist
 
-Before making the site public:
+Before sharing the site:
 
-- Set `NODE_ENV=production`.
-- Set a strong `SESSION_SECRET`.
-- Set a strong `OWNER_SETUP_TOKEN` before owner registration.
-- Use HTTPS only.
-- Keep the GitHub repo private while the project is early-stage.
-- Enable 2FA on GitHub, hosting, database, DNS, and Discord accounts.
-- Do not use SQLite on an ephemeral free host for important user data.
-- Use a persistent hosted database before inviting real users.
-- Keep dependencies updated.
-- Review moderation/admin logs regularly.
-- Never expose database service-role keys or Discord bot tokens to the browser.
+- `NODE_ENV=production`
+- `BASE_URL=https://noxi.lol`
+- HTTPS verified
+- strong unique server secrets
+- Postgres database initialized from `db/schema.sql`
+- `.env` absent from Git commits/history
+- GitHub/host/database/domain accounts protected with 2FA where available
+- storage service-role key only on the server
+- Discord token only on the bot host
+- rewarded ads disabled unless a legitimate provider callback is connected
+- donation flow kept external so NOXI never stores raw card data
+- account-provider age/identity/region requirements followed rather than bypassed
 
-## Reporting a security issue
+Run:
 
-Do not post active secrets, private tokens, or personal information in a public GitHub issue. Rotate exposed credentials first.
+```powershell
+npm run check
+```
+
+before production deploys.
+
+## Security reports
+
+Do not post live credentials or personal information in a GitHub issue. Rotate exposed credentials first, then describe the vulnerability without including the secret itself.
