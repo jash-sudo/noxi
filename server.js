@@ -14,7 +14,10 @@ if (process.env.NODE_ENV === 'production' && process.env.SESSION_SECRET.length <
 }
 
 const app = require('./src/app');
+const internalExtra = require('./src/internal-extra');
 const PORT = Number(process.env.PORT || 3000);
+
+app.use('/api/internal', internalExtra);
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`[NOXI] web service listening on port ${PORT}`);
