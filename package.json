@@ -5,7 +5,7 @@
   "description": "NOXI minimal profile platform for noxi.lol",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
+    "start": "npm run db:init && node server.js",
     "dev": "node --watch server.js",
     "bot": "node discord/bot.js",
     "check": "node scripts/check-env.js",
