@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>NOXI editor</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#090909;color:#fff;font-family:Arial,Helvetica,sans-serif}main{width:min(860px,calc(100% - 28px));margin:40px auto 80px}h1{font-size:22px;font-weight:500;margin:0 0 6px}.muted{color:#777;font-size:12px;line-height:1.6}.bar{display:flex;gap:10px;flex-wrap:wrap;margin:22px 0}.bar button{background:#111;color:#fff;border:1px solid #2a2a2a;padding:11px 14px;cursor:pointer}.bar button:hover{background:#fff;color:#000}.grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}.full{grid-column:1/-1}.section{border-top:1px solid #1c1c1c;padding-top:20px;margin-top:24px}label{display:block;color:#aaa;font-size:11px;margin-bottom:6px}input,textarea{width:100%;background:#050505;border:1px solid #242424;color:#fff;padding:11px;outline:0;font:inherit;font-size:13px}textarea{min-height:110px;resize:vertical}input:focus,textarea:focus{border-color:#555}.checks{display:flex;gap:18px;flex-wrap:wrap}.checks label{display:flex;align-items:center;gap:8px;margin:0}.checks input{width:auto}.status{font-size:12px;color:#aaa;min-height:20px}.tip{border:1px solid #202020;padding:12px;font-size:12px;color:#aaa;line-height:1.6;margin-top:18px}@media(max-width:700px){.grid{grid-template-columns:1fr}.full{grid-column:auto}}
+</style>
+</head>
+<body>
+<main>
+<h1>NOXI editor</h1>
+<div class="muted">Open your existing index.html, change stuff, then hit save. Chrome/Edge can overwrite the file directly. If your browser blocks that, use Download index.html instead.</div>
+<div class="bar"><button id="openBtn" type="button">open index.html</button><button id="saveBtn" type="button">save to opened file</button><button id="downloadBtn" type="button">download index.html</button></div>
+<div class="status" id="status">no file opened yet</div>
+<form id="form">
+<div class="grid">
+<div><label>name</label><input id="name" value="jash"></div>
+<div><label>handle</label><input id="handle" value="@jash"></div>
+<div class="full"><label>bio</label><textarea id="bio"></textarea></div>
+<div><label>avatar URL</label><input id="avatar" placeholder="https://..."></div>
+<div><label>accent color</label><input id="accent" value="#ffffff"></div>
+</div>
+<div class="section grid">
+<div class="full"><label>MP4 background URL</label><input id="backgroundVideo" placeholder="https://.../background.mp4"></div>
+<div class="full"><label>image background URL (fallback)</label><input id="backgroundImage" placeholder="https://.../background.jpg"></div>
+<div class="full"><label>music URL (mp3/ogg)</label><input id="music" placeholder="https://.../song.mp3"></div>
+<div><label>song label</label><input id="songLabel" placeholder="song name"></div>
+<div><label>scrolling text</label><input id="scrollText" value="noxi.lol/jash"></div>
+</div>
+<div class="section grid">
+<div><label>text color</label><input id="text" value="#ffffff"></div>
+<div><label>box color</label><input id="boxColor" value="rgba(0,0,0,.58)"></div>
+<div><label>border color</label><input id="borderColor" value="rgba(255,255,255,.16)"></div>
+<div><label>box roundness (0-40)</label><input id="radius" type="number" min="0" max="40" value="18"></div>
+<div><label>box blur (0-40)</label><input id="blur" type="number" min="0" max="40" value="16"></div>
+<div class="checks full"><label><input id="particles" type="checkbox" checked> particles</label><label><input id="customCursor" type="checkbox" checked> custom cursor</label><label><input id="tilt" type="checkbox" checked> mouse tilt</label></div>
+</div>
+<div class="section grid">
+<div class="full"><label>links — one per line: title | url</label><textarea id="links">GitHub | https://github.com/jash-sudo</textarea></div>
+<div class="full"><label>custom boxes — one per line: title | text</label><textarea id="boxes">about | edit me</textarea></div>
+</div>
+</form>
+<div class="tip">For hosted music/video/image backgrounds, use public URLs or relative filenames that you also upload beside index.html. Browsers block forced music autoplay, so the public page uses an enter button before music starts.</div>
+</main>
+<script>
+let fileHandle=null,originalHtml='';
+const $=id=>document.getElementById(id),status=$('status');
+function clamp(n,min,max,fallback){n=Number(n);return Number.isFinite(n)?Math.max(min,Math.min(max,n)):fallback}
+function rows(text,kind){return text.split(/\r?\n/).map(x=>x.trim()).filter(Boolean).map(line=>{const p=line.indexOf('|');if(p<0)return null;const a=line.slice(0,p).trim(),b=line.slice(p+1).trim();return kind==='links'?{title:a,url:b}:{title:a,body:b}}).filter(Boolean)}
+function collect(){return{name:$('name').value.trim(),handle:$('handle').value.trim(),bio:$('bio').value,avatar:$('avatar').value.trim(),backgroundVideo:$('backgroundVideo').value.trim(),backgroundImage:$('backgroundImage').value.trim(),music:$('music').value.trim(),songLabel:$('songLabel').value.trim(),scrollText:$('scrollText').value,accent:$('accent').value.trim()||'#ffffff',text:$('text').value.trim()||'#ffffff',boxColor:$('boxColor').value.trim()||'rgba(0,0,0,.58)',borderColor:$('borderColor').value.trim()||'rgba(255,255,255,.16)',radius:clamp($('radius').value,0,40,18),blur:clamp($('blur').value,0,40,16),particles:$('particles').checked,customCursor:$('customCursor').checked,tilt:$('tilt').checked,links:rows($('links').value,'links'),boxes:rows($('boxes').value,'boxes')}}
+function fill(c){for(const k of ['name','handle','bio','avatar','backgroundVideo','backgroundImage','music','songLabel','scrollText','accent','text','boxColor','borderColor','radius','blur'])if($(k)&&c[k]!==undefined)$(k).value=c[k];for(const k of ['particles','customCursor','tilt'])if($(k))$(k).checked=!!c[k];$('links').value=(c.links||[]).map(x=>`${x.title||''} | ${x.url||''}`).join('\n');$('boxes').value=(c.boxes||[]).map(x=>`${x.title||''} | ${x.body||''}`).join('\n')}
+function replaceConfig(html,c){const safe=JSON.stringify(c).replace(/<\//g,'<\\/');const re=/(<script id="noxi-config" type="application\/json">)[\s\S]*?(<\/script>)/;if(!re.test(html))throw new Error('That file does not look like the NOXI index.html');return html.replace(re,`$1${safe}$2`).replace(/<title>[\s\S]*?<\/title>/,`<title>${(c.name||'profile').replace(/[<&]/g,'')}</title>`)}
+$('openBtn').addEventListener('click',async()=>{try{if(!window.showOpenFilePicker)throw new Error('Direct file editing is not supported here. Use Chrome/Edge or Download index.html.');[fileHandle]=await showOpenFilePicker({types:[{description:'HTML',accept:{'text/html':['.html']}}],multiple:false});const f=await fileHandle.getFile();originalHtml=await f.text();const m=originalHtml.match(/<script id="noxi-config" type="application\/json">([\s\S]*?)<\/script>/);if(!m)throw new Error('NOXI config not found in this file.');fill(JSON.parse(m[1]));status.textContent='opened: '+f.name}catch(e){status.textContent=e.message}});
+$('saveBtn').addEventListener('click',async()=>{try{if(!fileHandle)throw new Error('Open index.html first.');const html=replaceConfig(originalHtml,collect());const w=await fileHandle.createWritable();await w.write(html);await w.close();originalHtml=html;status.textContent='saved to index.html'}catch(e){status.textContent=e.message}});
+$('downloadBtn').addEventListener('click',()=>{try{let html=originalHtml;if(!html){status.textContent='Open index.html first so I know which template to edit.';return}html=replaceConfig(html,collect());const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([html],{type:'text/html'}));a.download='index.html';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);status.textContent='downloaded index.html'}catch(e){status.textContent=e.message}});
+</script>
+</body>
+</html>
