@@ -51,7 +51,27 @@ node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
 
 Use a different generated value for every secret.
 
-## Fast local setup
+## Easiest Windows setup
+
+```powershell
+git clone https://github.com/jash-sudo/noxi.git
+cd noxi
+powershell -ExecutionPolicy Bypass -File .\setup.ps1
+```
+
+`setup.ps1` installs packages, creates the private `.env`, and generates the NOXI secrets without printing them. It does **not** put secrets on GitHub.
+
+Then open `.env` and paste only your private hosted Postgres URL after `DATABASE_URL=`. Finish with:
+
+```powershell
+npm run db:init
+npm run check
+npm start
+```
+
+Open `http://localhost:3000`.
+
+## Manual setup
 
 ```powershell
 git clone https://github.com/jash-sudo/noxi.git
@@ -67,8 +87,6 @@ npm run db:init
 npm run check
 npm start
 ```
-
-Open `http://localhost:3000`.
 
 ## Production/free setup
 
@@ -93,13 +111,15 @@ src/db.js                 Postgres layer
 src/security.js           validation/CSRF/security helpers
 src/views.js              minimal server-rendered UI
 src/integrations.js       email/storage/reward adapters
+src/internal-extra.js     extra private moderation routes
 public/style.css          NOXI visual design
 public/app.js             tiny browser-side behavior
 db/schema.sql             complete Postgres schema
 discord/bot.js            Discord moderation bot
+setup.ps1                 one-command local secret setup
 render.yaml               free deployment blueprint
 docs/FULL_SETUP.md        exact setup instructions
-SECURITY.md                secret/security checklist
+SECURITY.md               secret/security checklist
 ```
 
 Keep the repository private until deployment is verified and you have confirmed no real secret has ever been committed.
